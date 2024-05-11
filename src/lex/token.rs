@@ -224,11 +224,22 @@ impl<'a> Token<'a> {
                     Self::If(rand_target)
                 }
                 "#ENDIF" => Self::EndIf,
-                "#STAGEFILE" => Self::StageFile(
-                    c.next_token()
-                        .map(Path::new)
-                        .ok_or_else(|| c.err_expected_token("splashscreen imege filename"))?,
-                ),
+                "#STAGEFILE" => {
+                    if c.peek_token()
+                        .expect("No token after STAGEFILE")
+                        .starts_with("#")
+                    {
+                        // In my experience, there is often no value for this key,
+                        // so just insert blank path for those cases
+                        Self::StageFile(Path::new(""))
+                    } else {
+                        Self::StageFile(
+                            c.next_token().map(Path::new).ok_or_else(|| {
+                                c.err_expected_token("splashscreen imege filename")
+                            })?,
+                        )
+                    }
+                }
                 "#VOLWAV" => {
                     let volume = c
                         .next_token()
